@@ -9,7 +9,14 @@ TOKEN = ""
 QUEUE = []
 GUILD = None
 
-# Read options
+# Check if a member is privileged (TA/instructor) or not (student)
+def is_privileged(member):
+    for role in member.roles:
+        if role.name == "TA":
+            return True
+    return False
+
+# Read token from settings.json
 try:
     with open('settings.json') as f:
         data = json.load(f)
@@ -24,22 +31,28 @@ client = discord.Client()
 async def on_ready():
     global GUILD
 
+    # There should be only 1 server the bot is connected to
     if len(client.guilds) > 1 or len(client.guilds) < 1:
         print("Error regarding the number of servers...")
         sys.exit(-1)
 
     GUILD = client.guilds[0]
     print(f"{client.user} connected to Discord, on server " f"{GUILD.name}")
+    print("Hit [ctrl + c] to exit")
 
 @client.event
 async def on_message(message, pass_context=True):
+    # Don't have the bot reply to itself
     if message.author == client.user:
         return
+
+    # The bot only answers to private messages
     if not isinstance(message.channel, discord.DMChannel):
         return
 
     msg = message.content.lower()
 
+    # !joinq: typed by a student to join the queue
     if msg == '!joinq':
         if message.author.id not in QUEUE:
             QUEUE.append(message.author.id)
@@ -49,6 +62,7 @@ async def on_message(message, pass_context=True):
             await message.channel.send("You were already in the queue, your "\
                     "current position is: " + str(QUEUE.index(message.author.id)))
 
+    # !leaveq: typed by a student to leave the queue
     elif msg == "!leaveq":
         if message.author.id in QUEUE:
             QUEUE.remove(message.author.id)
@@ -56,6 +70,7 @@ async def on_message(message, pass_context=True):
         else:
             await message.channel.send("You are not in the queue")
 
+    # !status: typed by a student to query his position in the queue
     elif msg == "!status":
         if message.author.id in QUEUE:
             await message.channel.send("Your position is: " +
@@ -63,13 +78,10 @@ async def on_message(message, pass_context=True):
         else:
             await message.channel.send("You are not in the queue")
 
+    # !popq: typed by TA/instructor to pop from the queue the next student to see
     elif msg == "!popq":
         member = GUILD.get_member(message.author.id)
-        authorized = False
-        for role in member.roles:
-            if role.name == "TA":
-                authorized = True
-        if authorized:
+        if is_privileged(member):
             if len(QUEUE) > 0:
                 student = GUILD.get_member(QUEUE.pop(0))
                 await message.channel.send("The next student is: " +
@@ -80,15 +92,27 @@ async def on_message(message, pass_context=True):
             await message.channel.send("Sorry this command is only for TAs or"\
                     " the instructor")
 
+    # !clearq-yes-i-am-sure: TA/instructor clears the queue. Voluntarily long
+    # so we don't clear it by mistake
     elif msg == "!clearq-yes-i-am-sure":
         member = GUILD.get_member(message.author.id)
-        authorized = False
-        for role in member.roles:
-            if role.name == "TA":
-                authorized = True
-        if authorized:
+        if is_privileged(member):
             QUEUE.clear()
             await message.channel.send("Queue cleared")
+        else:
+            await message.channel.send("Sorry this command is only for TAs or"\
+                    " the instructor")
+
+    # !viewq: TA/instructor prints the entire queue
+    elif msg == "!viewq":
+        member = GUILD.get_member(message.author.id)
+        if is_privileged(member):
+            msg = ""
+            for student_id in QUEUE:
+                student = GUILD.get_member(student_id)
+                msg += str(QUEUE.index(student_id)) + ". "
+                msg += student.mention + "\n"
+            await message.channel.send(msg)
         else:
             await message.channel.send("Sorry this command is only for TAs or"\
                     " the instructor")
@@ -97,12 +121,14 @@ async def on_message(message, pass_context=True):
         await message.channel.send("Sorry, I didn't get that... the available"\
                 " commands are:\n"
                 "`!joinq` to join the queue\n"\
-                "`!status` to query your current position in the queue\n"\
+                "`!status` to query your current position in the queue (0: "\
+                    "first)\n"\
                 "`!leaveq` to leave the queue\n"\
                 "`!popq` to get the first student in the queue "\
                 "(instructor/TAs only)\n"\
                 "`!clearq-yes-I-am-sure` to clear the queue "\
-                "(instructor/TAs only)\n")
+                "(instructor/TAs only)\n"\
+                "`!viewq` to print the queue (instructor/TAs only")
 
 
 client.run(TOKEN)
