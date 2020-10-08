@@ -108,6 +108,8 @@ async def on_message(message, pass_context=True):
         member = GUILD.get_member(message.author.id)
         if is_privileged(member):
             msg = ""
+            if not QUEUE:
+                msg += "Queue empty!\n"
             for student_id in QUEUE:
                 student = GUILD.get_member(student_id)
                 msg += str(QUEUE.index(student_id)) + ". "
