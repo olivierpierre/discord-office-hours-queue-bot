@@ -5,6 +5,7 @@ import sys
 import json
 import discord
 
+NICKNAME = "QueueBot"
 TOKEN = ""
 QUEUE = []
 GUILD = None
@@ -63,6 +64,8 @@ async def on_message(message, pass_context=True):
     if msg == '!joinq':
         if message.author.id not in QUEUE:
             QUEUE.append(message.author.id)
+            if len(QUEUE) == 1:
+                await GUILD.me.edit(nick=NICKNAME + "*")
             await message.channel.send("OK, I added you to the queue! Your "\
                     "current position is: " + str(QUEUE.index(message.author.id)))
         else:
@@ -73,6 +76,8 @@ async def on_message(message, pass_context=True):
     elif msg == "!leaveq":
         if message.author.id in QUEUE:
             QUEUE.remove(message.author.id)
+            if len(QUEUE) == 0:
+                await GUILD.me.edit(nick=NICKNAME)
             await message.channel.send("OK, I removed you from the queue")
         else:
             await message.channel.send("You are not in the queue")
@@ -91,6 +96,8 @@ async def on_message(message, pass_context=True):
         if is_privileged(member):
             if len(QUEUE) > 0:
                 student = await get_member(QUEUE.pop(0))
+                if len(QUEUE) == 0:
+                    await GUILD.me.edit(nick=NICKNAME)
                 await message.channel.send("The next student is: " +
                         student.mention)
             else:
@@ -105,6 +112,7 @@ async def on_message(message, pass_context=True):
         member = await get_member(message.author.id)
         if is_privileged(member):
             QUEUE.clear()
+            await GUILD.me.edit(nick=NICKNAME)
             await message.channel.send("Queue cleared")
         else:
             await message.channel.send("Sorry this command is only for TAs or"\
@@ -125,9 +133,6 @@ async def on_message(message, pass_context=True):
         else:
             await message.channel.send("Sorry this command is only for TAs or"\
                     " the instructor")
-
-    elif message.content == 'raise-exception':
-        raise discord.DiscordException
 
     else:
         await message.channel.send("Sorry, I didn't get that... the available"\
