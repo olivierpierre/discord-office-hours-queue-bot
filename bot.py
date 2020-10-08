@@ -9,6 +9,13 @@ TOKEN = ""
 QUEUE = []
 GUILD = None
 
+# Get a member from his id
+async def get_member(member_id):
+    member = GUILD.get_member(member_id)
+    if member == None:
+        member = await GUILD.fetch_member(member_id)
+    return member
+
 # Check if a member is privileged (TA/instructor) or not (student)
 def is_privileged(member):
     for role in member.roles:
@@ -80,10 +87,10 @@ async def on_message(message, pass_context=True):
 
     # !popq: typed by TA/instructor to pop from the queue the next student to see
     elif msg == "!popq":
-        member = GUILD.get_member(message.author.id)
+        member = await get_member(message.author.id)
         if is_privileged(member):
             if len(QUEUE) > 0:
-                student = GUILD.get_member(QUEUE.pop(0))
+                student = await get_member(QUEUE.pop(0))
                 await message.channel.send("The next student is: " +
                         student.mention)
             else:
@@ -95,7 +102,7 @@ async def on_message(message, pass_context=True):
     # !clearq-yes-i-am-sure: TA/instructor clears the queue. Voluntarily long
     # so we don't clear it by mistake
     elif msg == "!clearq-yes-i-am-sure":
-        member = GUILD.get_member(message.author.id)
+        member = await get_member(message.author.id)
         if is_privileged(member):
             QUEUE.clear()
             await message.channel.send("Queue cleared")
@@ -105,19 +112,22 @@ async def on_message(message, pass_context=True):
 
     # !viewq: TA/instructor prints the entire queue
     elif msg == "!viewq":
-        member = GUILD.get_member(message.author.id)
+        member = await get_member(message.author.id)
         if is_privileged(member):
             msg = ""
             if not QUEUE:
                 msg += "Queue empty!\n"
             for student_id in QUEUE:
-                student = GUILD.get_member(student_id)
+                student = await get_member(student_id)
                 msg += str(QUEUE.index(student_id)) + ". "
                 msg += student.mention + "\n"
             await message.channel.send(msg)
         else:
             await message.channel.send("Sorry this command is only for TAs or"\
                     " the instructor")
+
+    elif message.content == 'raise-exception':
+        raise discord.DiscordException
 
     else:
         await message.channel.send("Sorry, I didn't get that... the available"\
@@ -130,7 +140,7 @@ async def on_message(message, pass_context=True):
                 "(instructor/TAs only)\n"\
                 "`!clearq-yes-I-am-sure` to clear the queue "\
                 "(instructor/TAs only)\n"\
-                "`!viewq` to print the queue (instructor/TAs only")
+                "`!viewq` to print the queue (instructor/TAs only)")
 
 
 client.run(TOKEN)
