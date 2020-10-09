@@ -12,6 +12,17 @@ QUEUE = []
 GUILD = None
 LOCK = asyncio.Lock()
 
+# Read token from settings.json
+try:
+    with open('settings.json') as f:
+        data = json.load(f)
+        TOKEN = data["token"]
+except FileNotFoundError as e:
+    print("Cannot find settings.json, exiting...")
+    sys.exit(-1)
+
+client = discord.Client()
+
 # Get a member from his id
 # If get_member does not work it means the member is not cached and we need to
 # use fetch_member to get it
@@ -28,34 +39,24 @@ def is_privileged(member):
             return True
     return False
 
-# Read token from settings.json
-try:
-    with open('settings.json') as f:
-        data = json.load(f)
-        TOKEN = data["token"]
-except FileNotFoundError as e:
-    print("Cannot find settings.json, exiting...")
-    sys.exit(-1)
-
-client = discord.Client()
-
 @client.event
 async def on_ready():
+    global GUILD
+
+    # There should be only 1 server the bot is connected to
+    if len(client.guilds) > 1 or len(client.guilds) < 1:
+        print("Error regarding the number of servers...")
+        sys.exit(-1)
+
+    GUILD = client.guilds[0]
+    print(f"{client.user} connected to Discord, on server " f"{GUILD.name}")
+    print("Hit [ctrl + c] to exit")
+
+
+@client.event
+async def on_message(message, pass_context=True):
     # Not sure about concurrency so let's serialize eveything for now
     async with LOCK:
-        global GUILD
-
-        # There should be only 1 server the bot is connected to
-        if len(client.guilds) > 1 or len(client.guilds) < 1:
-            print("Error regarding the number of servers...")
-            sys.exit(-1)
-
-        GUILD = client.guilds[0]
-        print(f"{client.user} connected to Discord, on server " f"{GUILD.name}")
-        print("Hit [ctrl + c] to exit")
-
-    @client.event
-    async def on_message(message, pass_context=True):
         # Don't have the bot reply to itself
         if message.author == client.user:
             return
@@ -153,5 +154,5 @@ async def on_ready():
                     "(instructor/TAs only)\n"\
                     "`!viewq` to print the queue (instructor/TAs only)")
 
-
+# For some reason this needs to be below on_ready/on_message
 client.run(TOKEN)
