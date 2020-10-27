@@ -9,6 +9,7 @@ import discord
 NICKNAME = "QueueBot"
 TOKEN = ""
 QUEUE = []
+NOTIFY = []
 GUILD = None
 LOCK = asyncio.Lock()
 
@@ -38,6 +39,14 @@ def is_privileged(member):
         if role.name == "TA":
             return True
     return False
+
+# Notify all instructors/TAs waiting for the queue to become non empty
+async def notify():
+    while NOTIFY:
+        user_id = NOTIFY.pop()
+        m = await get_member(user_id)
+        await m.send("Hi there, this is " + NICKNAME + ", someone just "\
+                "joined the queue!")
 
 @client.event
 async def on_ready():
@@ -73,6 +82,7 @@ async def on_message(message, pass_context=True):
                 QUEUE.append(message.author.id)
                 if len(QUEUE) == 1:
                     await GUILD.me.edit(nick=NICKNAME + "*")
+                    await notify()
                 await message.channel.send("OK, I added you to the queue! Your "\
                         "current position is: " + str(QUEUE.index(message.author.id)))
             else:
@@ -137,6 +147,21 @@ async def on_message(message, pass_context=True):
                     msg += str(QUEUE.index(student_id)) + ". "
                     msg += student.mention + "\n"
                 await message.channel.send(msg)
+            else:
+                await message.channel.send("Sorry this command is only for TAs or"\
+                        " the instructor")
+
+        # !notify: TA/instructor requests to be notified once the queue
+        # becomes non empty
+        elif msg == "!notify":
+            member = await get_member(message.author.id)
+            if is_privileged(member):
+                if len(QUEUE) == 0:
+                    NOTIFY.append(message.author.id)
+                    await message.channel.send("Alright, I'll ping you when "\
+                            "someone enters the queue")
+                else:
+                    await message.channel.send("Queue is already non empty!")
             else:
                 await message.channel.send("Sorry this command is only for TAs or"\
                         " the instructor")

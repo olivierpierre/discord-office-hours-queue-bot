@@ -18,8 +18,10 @@ commands:
 
 - `!popq` to select the next student to see (automatically dequeues the
   student)
-- `!clearq-yes-I-am-sure` to clear the queue
 - `!viewq` to print the entire queue
+- `!notify` when the queue is empty, to have the bot privately message the
+  instructor/TA once someone joins the queue
+- `!clearq-yes-I-am-sure` to clear the queue
 
 ## Installation
 
