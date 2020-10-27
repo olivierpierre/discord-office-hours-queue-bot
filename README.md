@@ -14,7 +14,7 @@ a private conversation with the bot and use the following commands:
 - `!leaveq` to leave the queue
 
 The instructor/TAs also interract with the bot in private chat with these
-commands:
+privileged commands:
 
 - `!popq` to select the next student to see (automatically dequeues the
   student)
@@ -22,6 +22,9 @@ commands:
 - `!notify` when the queue is empty, to have the bot privately message the
   instructor/TA once someone joins the queue
 - `!clearq-yes-I-am-sure` to clear the queue
+
+You need to setup a role named `TA` in your discord server and give it to the
+person you want to be able to use the privileged commands.
 
 ## Installation
 
