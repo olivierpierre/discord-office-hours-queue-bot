@@ -157,7 +157,8 @@ async def on_message(message, pass_context=True):
             member = await get_member(message.author.id)
             if is_privileged(member):
                 if len(QUEUE) == 0:
-                    NOTIFY.append(message.author.id)
+                    if message.author.id not in NOTIFY:
+                        NOTIFY.append(message.author.id)
                     await message.channel.send("Alright, I'll ping you when "\
                             "someone enters the queue")
                 else:
