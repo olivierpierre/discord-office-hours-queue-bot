@@ -1,6 +1,6 @@
 # Discord Office Hours Queue Bot
 
-Discord is great for office hours, however with large group it can be hard to
+Discord is great for office hours, however with large groups it can be hard to
 maintain the order of arrival of students so that they can be helped in the
 correct sequence by the instructor.
 
