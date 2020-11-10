@@ -24,7 +24,7 @@ privileged commands:
 - `!clearq-yes-I-am-sure` to clear the queue
 
 You need to setup a role named `TA` in your discord server and give it to the
-person you want to be able to use the privileged commands.
+person(s) you want to be able to use the privileged commands.
 
 ## Installation
 
@@ -45,6 +45,8 @@ example `settings-sample.json`. Finally launch the bot as follows:
 ./bot.py
 ```
 
-Obviously, the bot will only answers when it runs.
+Obviously, the bot will only answers when it runs. Don't forget to setup a role
+named `TA` on your server and give it to the people supposed to use the
+privileged commands.
 
 
