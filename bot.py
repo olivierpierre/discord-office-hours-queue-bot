@@ -4,6 +4,8 @@ import os
 import sys
 import json
 import asyncio
+import time
+from datetime import datetime
 import discord
 
 NICKNAME = "QueueBot"
@@ -23,6 +25,45 @@ except FileNotFoundError as e:
     sys.exit(-1)
 
 client = discord.Client()
+
+def queue_empty():
+    return (len(QUEUE) == 0)
+
+# Clear the queue
+async def clear_queue():
+    QUEUE.clear()
+    await GUILD.me.edit(nick=NICKNAME)
+
+# Pop a student from the queue
+async def pop_from_queue():
+    student = QUEUE.pop(0)
+    if len(QUEUE) == 0:
+        await GUILD.me.edit(nick=NICKNAME)
+    return student
+
+# Add someone to the queue
+async def add_to_queue(member_id):
+    QUEUE.append({ "id" : member_id,
+        "time" : time.time()})
+    if len(QUEUE) == 1:
+        await GUILD.me.edit(nick=NICKNAME + "*")
+        await notify()
+
+# Remove someone from the queue
+async def remove_from_queue(member_id):
+    for m in QUEUE:
+        if m["id"] == member_id:
+            QUEUE.remove(m)
+            break
+    if len(QUEUE) == 0:
+        await GUILD.me.edit(nick=NICKNAME)
+
+# Get the position of an id in the queue. Returns -1 if not present.
+def get_position(member_id):
+    for m in QUEUE:
+        if m["id"] == member_id:
+            return QUEUE.index(m)
+    return -1
 
 # Get a member from his id
 # If get_member does not work it means the member is not cached and we need to
@@ -78,32 +119,29 @@ async def on_message(message, pass_context=True):
 
         # !joinq: typed by a student to join the queue
         if msg == '!joinq':
-            if message.author.id not in QUEUE:
-                QUEUE.append(message.author.id)
-                if len(QUEUE) == 1:
-                    await GUILD.me.edit(nick=NICKNAME + "*")
-                    await notify()
+            if get_position(message.author.id) == -1:
+                await add_to_queue(message.author.id)
                 await message.channel.send("OK, I added you to the queue! Your "\
-                        "current position is: " + str(QUEUE.index(message.author.id)))
+                        "current position is: " + \
+                        str(get_position(message.author.id)))
             else:
                 await message.channel.send("You were already in the queue, your "\
-                        "current position is: " + str(QUEUE.index(message.author.id)))
+                        "current position is: " + \
+                        str(get_position(message.author.id)))
 
         # !leaveq: typed by a student to leave the queue
         elif msg == "!leaveq":
-            if message.author.id in QUEUE:
-                QUEUE.remove(message.author.id)
-                if len(QUEUE) == 0:
-                    await GUILD.me.edit(nick=NICKNAME)
+            if get_position(message.author.id) != -1:
+                await remove_from_queue(message.author.id)
                 await message.channel.send("OK, I removed you from the queue")
             else:
                 await message.channel.send("You are not in the queue")
 
         # !status: typed by a student to query his position in the queue
         elif msg == "!status":
-            if message.author.id in QUEUE:
+            if get_position(message.author.id) != -1:
                 await message.channel.send("Your position is: " +
-                        str(QUEUE.index(message.author.id)))
+                        str(get_position(message.author.id)))
             else:
                 await message.channel.send("You are not in the queue")
 
@@ -111,12 +149,15 @@ async def on_message(message, pass_context=True):
         elif msg == "!popq":
             member = await get_member(message.author.id)
             if is_privileged(member):
-                if len(QUEUE) > 0:
-                    student = await get_member(QUEUE.pop(0))
-                    if len(QUEUE) == 0:
-                        await GUILD.me.edit(nick=NICKNAME)
+                if not queue_empty():
+                    student = await pop_from_queue()
+                    member = await get_member(student["id"])
+                    # Compute time waiting
+                    wait_time = time.time() - student["time"]
+                    str_wait_time = \
+                            datetime.utcfromtimestamp(wait_time).strftime('%Mm %Ss')
                     await message.channel.send("The next student is: " +
-                            student.mention)
+                            member.mention + " (waited for " + str_wait_time + ")")
                 else:
                     await message.channel.send("Queue empty!")
             else:
@@ -128,8 +169,7 @@ async def on_message(message, pass_context=True):
         elif msg == "!clearq-yes-i-am-sure":
             member = await get_member(message.author.id)
             if is_privileged(member):
-                QUEUE.clear()
-                await GUILD.me.edit(nick=NICKNAME)
+                await clear_queue()
                 await message.channel.send("Queue cleared")
             else:
                 await message.channel.send("Sorry this command is only for TAs or"\
@@ -142,10 +182,14 @@ async def on_message(message, pass_context=True):
                 msg = ""
                 if not QUEUE:
                     msg += "Queue empty!\n"
-                for student_id in QUEUE:
-                    student = await get_member(student_id)
-                    msg += str(QUEUE.index(student_id)) + ". "
-                    msg += student.mention + "\n"
+                for member in QUEUE:
+                    # Compute time waiting
+                    wait_time = time.time() - member["time"]
+                    str_wait_time = "queued for " + \
+                            datetime.utcfromtimestamp(wait_time).strftime('%Mm %Ss')
+                    student = await get_member(member["id"])
+                    msg += str(QUEUE.index(member)) + ". "
+                    msg += student.mention + " (" + str_wait_time + ")\n"
                 await message.channel.send(msg)
             else:
                 await message.channel.send("Sorry this command is only for TAs or"\
@@ -156,7 +200,7 @@ async def on_message(message, pass_context=True):
         elif msg == "!notify":
             member = await get_member(message.author.id)
             if is_privileged(member):
-                if len(QUEUE) == 0:
+                if queue_empty():
                     if message.author.id not in NOTIFY:
                         NOTIFY.append(message.author.id)
                     await message.channel.send("Alright, I'll ping you when "\
