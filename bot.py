@@ -222,7 +222,9 @@ async def on_message(message, pass_context=True):
                     "(instructor/TAs only)\n"\
                     "`!clearq-yes-I-am-sure` to clear the queue "\
                     "(instructor/TAs only)\n"\
-                    "`!viewq` to print the queue (instructor/TAs only)")
+                    "`!viewq` to print the queue (instructor/TAs only)\n"\
+                    "`!notify` to get notified next time someone joins the "\
+                    "queue (instructor/TA only)")
 
 # For some reason this needs to be below on_ready/on_message
 client.run(TOKEN)
