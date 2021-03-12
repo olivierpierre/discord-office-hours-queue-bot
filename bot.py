@@ -13,6 +13,7 @@ NICKNAME = "QueueBot"
 TOKEN = ""
 QUEUE = []
 NOTIFY = []
+NOTIFY_ALWAYS = []
 GUILD = None
 LOCK = asyncio.Lock()
 LOGGING = False
@@ -96,6 +97,10 @@ async def notify():
     while NOTIFY:
         user_id = NOTIFY.pop()
         m = await get_member(user_id)
+        await m.send("Hi there, this is " + NICKNAME + ", someone just "\
+                "joined the queue!")
+    for user in NOTIFY_ALWAYS:
+        m = await get_member(user)
         await m.send("Hi there, this is " + NICKNAME + ", someone just "\
                 "joined the queue!")
 
@@ -221,9 +226,24 @@ async def on_message(message, pass_context=True):
                 await message.channel.send("Sorry this command is only for TAs or"\
                         " the instructor")
 
+        elif msg == "!notify-always":
+            member = await get_member(message.author.id)
+            if is_privileged(member):
+                if message.author.id not in NOTIFY_ALWAYS:
+                    NOTIFY_ALWAYS.append(message.author.id)
+                    await message.channel.send("Alright, I'll always ping you "\
+                            "when someone enters the queue")
+                else:
+                    NOTIFY_ALWAYS.remove(message.author.id)
+                    await message.channel.send("I removed you from the "\
+                            "always-notify list")
+            else:
+                await message.channel.send("Sorry this command is only for TAs"\
+                        " or the instructor")
+
         else:
-            await message.channel.send("Sorry, I didn't get that... the available"\
-                    " commands are:\n"
+            await message.channel.send("Sorry, I didn't get that... "\
+                    "the available commands are:\n"
                     "`!joinq` to join the queue\n"\
                     "`!status` to query your current position in the queue (0: "\
                         "first)\n"\
@@ -237,7 +257,8 @@ async def on_message(message, pass_context=True):
                     "queue (instructor/TA only)")
 
 parser = argparse.ArgumentParser(description="Process some integers.")
-parser.add_argument("-l", "--logging", help="Log queue state evolution", action="store_true")
+parser.add_argument("-l", "--logging", help="Log queue state evolution",
+        action="store_true")
 args = parser.parse_args()
 
 if args.logging:

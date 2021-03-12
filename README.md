@@ -21,6 +21,9 @@ privileged commands:
 - `!viewq` to print the entire queue
 - `!notify` when the queue is empty, to have the bot privately message the
   instructor/TA once someone joins the queue
+- `!notify-always` works similarly to `!notify`, but does not need to be
+  relaunched each time a signal is sent, i.e. it will always signal the
+  instructor/TA when someone joins an empty queue
 - `!clearq-yes-I-am-sure` to clear the queue
 
 You need to setup a role named `TA` in your discord server and give it to the
