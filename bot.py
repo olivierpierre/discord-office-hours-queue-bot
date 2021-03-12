@@ -7,6 +7,7 @@ import asyncio
 import time
 from datetime import datetime
 import discord
+import argparse
 
 NICKNAME = "QueueBot"
 TOKEN = ""
@@ -14,6 +15,7 @@ QUEUE = []
 NOTIFY = []
 GUILD = None
 LOCK = asyncio.Lock()
+LOGGING = False
 
 # Read token from settings.json
 try:
@@ -33,12 +35,16 @@ def queue_empty():
 async def clear_queue():
     QUEUE.clear()
     await GUILD.me.edit(nick=NICKNAME)
+    if LOGGING:
+        print(datetime.now().strftime("%m/%d/%Y %H:%M:%S: ") + "queue cleared")
 
 # Pop a student from the queue
 async def pop_from_queue():
     student = QUEUE.pop(0)
     if len(QUEUE) == 0:
         await GUILD.me.edit(nick=NICKNAME)
+    if LOGGING:
+        print(datetime.now().strftime("%m/%d/%Y %H:%M:%S: ") + str(student["id"]) + " popped")
     return student
 
 # Add someone to the queue
@@ -48,6 +54,8 @@ async def add_to_queue(member_id):
     if len(QUEUE) == 1:
         await GUILD.me.edit(nick=NICKNAME + "*")
         await notify()
+    if LOGGING:
+        print(datetime.now().strftime("%m/%d/%Y %H:%M:%S: ") + str(member_id) + " joined")
 
 # Remove someone from the queue
 async def remove_from_queue(member_id):
@@ -57,6 +65,8 @@ async def remove_from_queue(member_id):
             break
     if len(QUEUE) == 0:
         await GUILD.me.edit(nick=NICKNAME)
+    if LOGGING:
+        print(datetime.now().strftime("%m/%d/%Y %H:%M:%S: ") + str(member_id) + " removed")
 
 # Get the position of an id in the queue. Returns -1 if not present.
 def get_position(member_id):
@@ -225,6 +235,15 @@ async def on_message(message, pass_context=True):
                     "`!viewq` to print the queue (instructor/TAs only)\n"\
                     "`!notify` to get notified next time someone joins the "\
                     "queue (instructor/TA only)")
+
+parser = argparse.ArgumentParser(description="Process some integers.")
+parser.add_argument("-l", "--logging", help="Log queue state evolution", action="store_true")
+args = parser.parse_args()
+
+if args.logging:
+    LOGGING = True
+else:
+    LOGGING = False
 
 # For some reason this needs to be below on_ready/on_message
 client.run(TOKEN)
