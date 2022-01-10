@@ -29,7 +29,7 @@ privileged commands:
 You need to setup a role named `TA` in your discord server and give it to the
 person(s) you want to be able to use the privileged commands. A Discord server
 template with the correct setup is available here:
-https://discord.new/Rh2NeDTAujq9.
+https://discord.new/6tXKxc93fsm5.
 
 ## Installation
 
