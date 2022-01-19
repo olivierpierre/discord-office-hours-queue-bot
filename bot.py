@@ -18,16 +18,31 @@ GUILD = None
 LOCK = asyncio.Lock()
 LOGGING = False
 
-# Read token from settings.json
+parser = argparse.ArgumentParser(description="Discord office hours bot.")
+parser.add_argument("-l", "--logging", help="Log queue state evolution",
+        action="store_true")
+parser.add_argument("-s", "--settings", help="Specify settings file "\
+        "(default will be settings.json in the local directory)")
+args = parser.parse_args()
+
+if args.logging:
+    LOGGING = args.logging
+
+settings = "./settings.json"
+if args.settings:
+    settings = args.settings
+
+# Load settings
 try:
-    with open('settings.json') as f:
+    with open(settings) as f:
         data = json.load(f)
         TOKEN = data["token"]
 except FileNotFoundError as e:
-    print("Cannot find settings.json, exiting...")
+    print("Cannot find file" + settings + ", exiting...")
     sys.exit(-1)
 
 client = discord.Client()
+
 
 def queue_empty():
     return (len(QUEUE) == 0)
@@ -255,16 +270,6 @@ async def on_message(message, pass_context=True):
                     "`!viewq` to print the queue (instructor/TAs only)\n"\
                     "`!notify` to get notified next time someone joins the "\
                     "queue (instructor/TA only)")
-
-parser = argparse.ArgumentParser(description="Process some integers.")
-parser.add_argument("-l", "--logging", help="Log queue state evolution",
-        action="store_true")
-args = parser.parse_args()
-
-if args.logging:
-    LOGGING = True
-else:
-    LOGGING = False
 
 # For some reason this needs to be below on_ready/on_message
 client.run(TOKEN)
