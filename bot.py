@@ -125,7 +125,9 @@ async def on_ready():
 
     # There should be only 1 server the bot is connected to
     if len(client.guilds) > 1 or len(client.guilds) < 1:
-        print("Error regarding the number of servers...")
+        print("Error: this bot is not connected to any server, or it is"\
+                " connected to more than one server (currently "\
+                "unsupported), exiting...")
         sys.exit(-1)
 
     GUILD = client.guilds[0]
