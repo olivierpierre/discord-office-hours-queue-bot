@@ -38,7 +38,7 @@ try:
         data = json.load(f)
         TOKEN = data["token"]
 except FileNotFoundError as e:
-    print("Cannot find file" + settings + ", exiting...")
+    print("Cannot find file " + settings + ", exiting...")
     sys.exit(-1)
 
 client = discord.Client()
