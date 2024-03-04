@@ -50,7 +50,7 @@ example `settings-sample.json`. Finally launch the bot as follows:
 ./bot.py
 ```
 
-Obviously, the bot will only answers when it runs. Don't forget to setup a role
+Obviously, the bot will only answer when it runs. Don't forget to setup a role
 named `TA` on your server and give it to the people supposed to use the
 privileged commands.
 
